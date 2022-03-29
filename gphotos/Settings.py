@@ -37,3 +37,5 @@ class Settings:
     progress: bool
 
     ntfs_override: bool
+
+    google_key: str

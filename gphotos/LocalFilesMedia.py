@@ -182,6 +182,17 @@ class LocalFilesMedia(BaseMedia):
         return result
 
     @property
+    def exif(self) -> str:
+        return self.__exif
+        # try:
+        #     for k in self.__exif.list_all():
+        #         print("%s = %s" % (k, str(self.__exif[k])))
+        #         # s += self.__exif[k]
+        # except (AttributeError, KeyError, ValueError):
+        #     print("not a str for k = ", k)
+        # return s
+
+    @property
     def orig_name(self) -> str:
         return self.__original_name
 

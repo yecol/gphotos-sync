@@ -2,6 +2,7 @@ import logging
 import os.path
 import re
 import shutil
+
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Callable
@@ -122,9 +123,10 @@ class GoogleAlbumsSync(object):
                     media_item.duplicate_number = num
 
                     log.debug(
-                        "Adding album media item %s %s %s",
+                        "[yweb-token] %s %s %s %s",
                         media_item.relative_path,
                         media_item.filename,
+                        media_item.url,
                         media_item.duplicate_number,
                     )
                     self._db.put_row(GooglePhotosRow.from_media(media_item), False)

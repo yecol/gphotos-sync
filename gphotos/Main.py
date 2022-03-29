@@ -259,6 +259,10 @@ class GooglePhotosSyncMain:
         help="Declare that the target filesystem is ntfs (or ntfs like)."
         "This overrides the automatic detection.",
     )
+    parser.add_argument(
+        "--key",
+        help="Secret key.",
+    )
     parser.add_help = True
 
     def setup(self, args: Namespace, db_path: Path):
@@ -276,6 +280,7 @@ class GooglePhotosSyncMain:
             secret_file = Path(args.secret)
         else:
             secret_file = Path(app_dirs.user_config_dir) / "client_secret.json"
+
         if args.new_token and credentials_file.exists():
             credentials_file.unlink()
 
@@ -314,7 +319,8 @@ class GooglePhotosSyncMain:
             omit_album_date=args.omit_album_date,
             use_hardlinks=args.use_hardlinks,
             progress=args.progress,
-            ntfs_override=args.ntfs
+            ntfs_override=args.ntfs,
+            google_key=args.key
         )
 
         self.google_photos_client = RestClient(photos_api_url, self.auth.session)
