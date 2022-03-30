@@ -1,8 +1,17 @@
+from asyncio.log import logger
 from json import dumps
+import json
 from typing import Dict, List, Union, Any
-from requests import Session
+
+# from requests import Session
 from requests.exceptions import BaseHTTPError
+from google.oauth2 import service_account
 import logging
+import httplib2
+from google.auth.transport.requests import AuthorizedSession
+
+# import googleapiclient.discovery
+# from google.auth.transport.httplib2 import AuthorizedHttp
 
 JSONValue = Union[str, int, float, bool, None, Dict[str, Any], List[Any]]
 JSONType = Union[Dict[str, JSONValue], List[JSONValue]]
@@ -19,7 +28,6 @@ requests instead of httplib2
 giles 2018
 """
 
-
 # a dummy decorator to suppress unresolved references on this dynamic class
 def dynamic_attrs(cls):
     return cls
@@ -27,15 +35,26 @@ def dynamic_attrs(cls):
 
 @dynamic_attrs
 class RestClient:
-    """ To create a callable client to a REST API, instantiate this class.
+    """To create a callable client to a REST API, instantiate this class.
     For details of the discovery API see:
         https://developers.google.com/discovery/v1/using
     """
 
-    def __init__(self, api_url: str, auth_session: Session):
+    def __init__(self, api_url: str, auth_session: service_account.Credentials):
         """ """
-        self.auth_session: Session = auth_session
-        service_document = self.auth_session.get(api_url).json()
+        self.auth_session: service_account.Credentials = auth_session
+        # service_document = self.auth_session.get(api_url).json()
+
+        h = httplib2.Http()
+        resp, content = h.request(api_url)
+        service_document = json.loads(content)
+
+        # dicovery_service = googleapiclient.discovery.build(
+        #     "gphotos", "v2", discoveryServiceUrl=api_url, credentials=auth_session
+        # )
+        # resp = dicovery_service.instances().list(name="projects/yweb-344514").execute()
+        # print(resp)
+        # service_document = dicovery_service
         self.json: JSONType = service_document
         self.base_url: str = str(service_document["baseUrl"])
         for c_name, collection in service_document["resources"].items():
@@ -73,7 +92,7 @@ class Method:
                     self.query_args.append(key)
 
     def execute(self, body: str = None, **k_args: Dict[str, str]):
-        """ executes the remote REST call for this Method"""
+        """executes the remote REST call for this Method"""
         path_args: Dict[str, str] = {
             k: k_args[k] for k in self.path_args if k in k_args
         }
@@ -84,14 +103,16 @@ class Method:
         if body:
             body = dumps(body)
 
-        log.trace(
+        logger.trace(
             "\nREQUEST: %s to %s params=%s\n%s",
             self.httpMethod,
             path,
             query_args,
             body,
         )
-        result = self.service.auth_session.request(
+        
+        authed_session = AuthorizedSession(self.service.auth_session)
+        result = authed_session.request(
             self.httpMethod, data=body, url=path, timeout=10, params=query_args
         )
         log.trace("\nRESPONSE: %s\n%s", result.status_code, str(result.content))
@@ -108,7 +129,7 @@ class Method:
         return result
 
     def make_path(self, path_args: Dict[str, str]) -> str:
-        """ Extracts the arguments from path_args and inserts them into
+        """Extracts the arguments from path_args and inserts them into
         the URL template defined in self.path
 
         Returns:
@@ -127,8 +148,8 @@ class Method:
 
 
 class Collection:
-    """ Used to represent a collection of methods
-    e.g. Google Photos API - mediaItems """
+    """Used to represent a collection of methods
+    e.g. Google Photos API - mediaItems"""
 
     def __init__(self, name: str):
         self.collection_name = name

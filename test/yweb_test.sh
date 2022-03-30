@@ -4,7 +4,8 @@ cd ${DIR}
 
 pipenv run ../gphotos-sync \
     ../photostream \
-    --secret ./client.json \
+    --secret ./ac.json \
+    # --secret ./ac.json \
     --album-regex "^yweb-" \
     --use-flat-path \
     --skip-video \

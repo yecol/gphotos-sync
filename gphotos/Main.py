@@ -5,6 +5,9 @@ import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
 from pathlib import Path
+from google.oauth2 import service_account
+import googleapiclient.discovery
+
 
 from appdirs import AppDirs
 from gphotos import Utils
@@ -76,10 +79,10 @@ class GooglePhotosSyncMain:
     album_group.add_argument(
         "--album-regex",
         action="store",
-        metavar='REGEX',
+        metavar="REGEX",
         help="""only synchronize albums that match regular expression.
         regex is case insensitive and unanchored. e.g. to select two albums:
-        "^(a full album name|another full name)$" """
+        "^(a full album name|another full name)$" """,
     )
     parser.add_argument(
         "--log-level",
@@ -275,27 +278,39 @@ class GooglePhotosSyncMain:
 
         self.data_store = LocalData(db_path, args.flush_index)
 
-        credentials_file = db_path / ".gphotos.token"
+        # credentials_file = db_path / ".gphotos.token"
         if args.secret:
             secret_file = Path(args.secret)
         else:
             secret_file = Path(app_dirs.user_config_dir) / "client_secret.json"
 
-        if args.new_token and credentials_file.exists():
-            credentials_file.unlink()
+        # log.info(f"args.secret =  {secret_file}")
+        print("testing: ", secret_file)
+
+        # if args.new_token and credentials_file.exists():
+        # credentials_file.unlink()
 
         scope = [
             "https://www.googleapis.com/auth/photoslibrary.readonly",
             "https://www.googleapis.com/auth/photoslibrary.sharing",
+            # 'https://www.googleapis.com/auth/sqlservice.admin',
         ]
         photos_api_url = (
             "https://photoslibrary.googleapis.com/$discovery" "/rest?version=v1"
         )
 
-        self.auth = Authorize(
-            scope, credentials_file, secret_file, int(args.max_retries)
+        credentials = service_account.Credentials.from_service_account_file(
+            secret_file, scopes=scope
         )
-        self.auth.authorize()
+
+        sqladmin = googleapiclient.discovery.build('sqladmin', 'v1', credentials=credentials)
+        response = sqladmin.instances().list(project='yweb-344514').execute()
+        print(response)
+
+        # self.auth = Authorize(
+        #     scope, credentials_file, secret_file, int(args.max_retries)
+        # )
+        # self.auth.authorize()
 
         settings = Settings(
             start_date=Utils.string_to_date(args.start_date),
@@ -320,10 +335,10 @@ class GooglePhotosSyncMain:
             use_hardlinks=args.use_hardlinks,
             progress=args.progress,
             ntfs_override=args.ntfs,
-            google_key=args.key
+            google_key=args.key,
         )
 
-        self.google_photos_client = RestClient(photos_api_url, self.auth.session)
+        self.google_photos_client = RestClient(photos_api_url, credentials)
         self.google_photos_idx = GooglePhotosIndex(
             self.google_photos_client, root_folder, self.data_store, settings
         )
