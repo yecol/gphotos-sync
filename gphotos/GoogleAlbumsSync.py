@@ -123,11 +123,9 @@ class GoogleAlbumsSync(object):
                     media_item.duplicate_number = num
 
                     log.debug(
-                        "[yweb-token] %s %s %s %s",
+                        "[yweb-token] %s %s",
                         media_item.relative_path,
-                        media_item.filename,
-                        media_item.url,
-                        media_item.duplicate_number,
+                        media_item.description,
                     )
                     self._db.put_row(GooglePhotosRow.from_media(media_item), False)
 

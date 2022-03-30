@@ -22,7 +22,7 @@ class GoogleAlbumMedia(BaseMedia):
 
     @property
     def description(self):
-        return self.orig_name
+        return self.__media_json["description"]
 
     @property
     def orig_name(self) -> str:

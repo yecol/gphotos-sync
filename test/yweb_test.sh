@@ -5,8 +5,10 @@ cd ${DIR}
 pipenv run ../gphotos-sync \
     ../photostream \
     --secret ./client.json \
-    --album yweb \
+    --album-regex "^yweb-" \
     --use-flat-path \
+    --skip-video \
+    --flush-index \
     --log-level trace
 
-grep -w yweb-token ../photostream/gphotos.log | cut -d" " -f10-12 > ../photostream/yweb_origins.txt
+grep -w yweb-token ../photostream/gphotos.log | cut -d" " -f9-10 > ../photostream/yweb_origins.txt
